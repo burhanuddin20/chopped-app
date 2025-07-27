@@ -7,7 +7,12 @@ import UploadScreen from './UploadScreen';
 import SettingsScreen from './SettingsScreen';
 import { theme } from '../theme/theme';
 
-export default function MainAppScreen({ navigation }) {
+interface MainAppScreenProps {
+  navigation: any;
+  route?: any;
+}
+
+export default function MainAppScreen({ navigation, route }: MainAppScreenProps) {
   const [activeTab, setActiveTab] = useState('home');
 
   const handleTabPress = (screenName: string) => {
@@ -19,7 +24,7 @@ export default function MainAppScreen({ navigation }) {
   const renderScreen = () => {
     switch (activeTab) {
       case 'home':
-        return <ResultsScreen navigation={navigation} />;
+        return <ResultsScreen navigation={navigation} route={route} />;
       case 'history':
         return <HistoryScreen navigation={navigation} />;
       case 'upload':
@@ -27,7 +32,7 @@ export default function MainAppScreen({ navigation }) {
       case 'settings':
         return <SettingsScreen navigation={navigation} />;
       default:
-        return <ResultsScreen navigation={navigation} />;
+        return <ResultsScreen navigation={navigation} route={route} />;
     }
   };
 

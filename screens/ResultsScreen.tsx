@@ -19,7 +19,16 @@ interface ScoreSection {
   color: string;
 }
 
-export default function ResultsScreen({ navigation, route }) {
+interface ResultsScreenProps {
+  navigation: any;
+  route?: {
+    params?: {
+      analysisResult?: AnalysisResult;
+    };
+  };
+}
+
+export default function ResultsScreen({ navigation, route }: ResultsScreenProps) {
   const { isPremium, unlockPremium, isLoading } = useSubscription();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
@@ -31,10 +40,10 @@ export default function ResultsScreen({ navigation, route }) {
 
   // Load analysis result from route params
   useEffect(() => {
-    if (route.params?.analysisResult) {
+    if (route?.params?.analysisResult) {
       setAnalysisResult(route.params.analysisResult);
     }
-  }, [route.params]);
+  }, [route?.params]);
 
   // Use real data if available, otherwise fallback to mock data
   const overallScore = analysisResult?.score || 78;

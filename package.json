@@ -3,10 +3,13 @@
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web"
+    "start": "npx expo start",
+    "android": "npx expo start --android",
+    "ios": "npx expo start --ios",
+    "web": "npx expo start --web",
+    "backend": "cd backend && npm run dev",
+    "backend:start": "cd backend && npm start",
+    "test:backend": "cd backend && node test-api.js"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.1",
@@ -36,6 +39,7 @@
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@types/react": "~19.0.10",
+    "concurrently": "^8.2.2",
     "typescript": "~5.8.3"
   },
   "private": true

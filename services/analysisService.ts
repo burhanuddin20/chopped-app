@@ -30,7 +30,7 @@ export interface AnalysisResult {
 class AnalysisService {
   private static instance: AnalysisService;
   private baseUrl = API_CONFIG.BASE_URL;
-  private useMockData = true; // Set to true to use mock data instead of API
+  private useMockData = false; // Set to false to use real backend API
 
   static getInstance(): AnalysisService {
     if (!AnalysisService.instance) {

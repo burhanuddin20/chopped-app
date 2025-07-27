@@ -114,7 +114,7 @@ export default function UploadScreen({ navigation }) {
         <View style={styles.header}>
           <Text style={styles.title}>Upload Photos</Text>
           <Text style={styles.subtitle}>
-            Upload 2-4 photos for the best analysis
+            Upload 3 photos for the best analysis
           </Text>
         </View>
 
@@ -154,13 +154,13 @@ export default function UploadScreen({ navigation }) {
 
         <View style={styles.progressSection}>
           <Text style={styles.progressText}>
-            {photos.length}/4 photos uploaded
+            {photos.length}/3 photos uploaded
           </Text>
           <View style={styles.progressBar}>
             <View 
               style={[
                 styles.progressFill, 
-                { width: `${Math.min((photos.length / 4) * 100, 100)}%` }
+                { width: `${Math.min((photos.length / 3) * 100, 100)}%` }
               ]} 
             />
           </View>
