@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { useSubscription } from '../contexts/SubscriptionContext';
+import { isFeatureEnabled } from '../config/featureFlags';
 import { theme } from '../theme/theme';
 
 interface PhotoData {
@@ -17,6 +18,9 @@ interface PhotoData {
 export default function UploadScreen({ navigation }) {
   const [photos, setPhotos] = useState<PhotoData[]>([]);
   const { updateHasUploadedPhoto } = useSubscription();
+  
+  // Check if upload tracking is enabled
+  const uploadTrackingEnabled = isFeatureEnabled('UPLOAD_TRACKING');
 
   const photoTypes: Omit<PhotoData, 'id' | 'uri'>[] = [
     {
@@ -79,8 +83,10 @@ export default function UploadScreen({ navigation }) {
 
   const handleAnalyze = async () => {
     if (canContinue) {
-      // Mark that user has uploaded photos
-      await updateHasUploadedPhoto(true);
+      // Only track upload if the feature is enabled
+      if (uploadTrackingEnabled) {
+        await updateHasUploadedPhoto(true);
+      }
       navigation.navigate('Analysis');
     }
   };

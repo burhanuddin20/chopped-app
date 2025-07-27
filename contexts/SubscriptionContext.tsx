@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { isFreemiumEnabled } from '../config/featureFlags';
 
 interface SubscriptionContextType {
   isPremium: boolean;
@@ -26,6 +27,13 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
 
   const loadSubscriptionState = async () => {
     try {
+      // If freemium is disabled, automatically set premium to true
+      if (!isFreemiumEnabled()) {
+        setIsPremium(true);
+        setIsLoading(false);
+        return;
+      }
+
       const premiumStatus = await AsyncStorage.getItem('isPremium');
       const uploadedStatus = await AsyncStorage.getItem('hasUploadedPhoto');
       
@@ -41,6 +49,13 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
   const unlockPremium = async () => {
     try {
       setIsLoading(true);
+      // If freemium is disabled, immediately unlock
+      if (!isFreemiumEnabled()) {
+        setIsPremium(true);
+        setIsLoading(false);
+        return;
+      }
+
       // Here you would integrate with your in-app purchase system
       // For now, we'll simulate a successful purchase
       await AsyncStorage.setItem('isPremium', 'true');
@@ -54,6 +69,12 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
 
   const updateHasUploadedPhoto = async (hasUploaded: boolean) => {
     try {
+      // If freemium is disabled, skip tracking
+      if (!isFreemiumEnabled()) {
+        setHasUploadedPhoto(true);
+        return;
+      }
+
       await AsyncStorage.setItem('hasUploadedPhoto', hasUploaded.toString());
       setHasUploadedPhoto(hasUploaded);
     } catch (error) {

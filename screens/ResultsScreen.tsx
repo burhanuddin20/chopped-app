@@ -6,6 +6,7 @@ import { Card } from '../components/Card';
 import { BlurredOverlay } from '../components/BlurredOverlay';
 import { PremiumUpgradeModal } from '../components/PremiumUpgradeModal';
 import { useSubscription } from '../contexts/SubscriptionContext';
+import { isFeatureEnabled } from '../config/featureFlags';
 import { theme } from '../theme/theme';
 
 interface ScoreSection {
@@ -20,6 +21,11 @@ interface ScoreSection {
 export default function ResultsScreen({ navigation }) {
   const { isPremium, unlockPremium, isLoading } = useSubscription();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  // Check if freemium features are enabled
+  const freemiumEnabled = isFeatureEnabled('FREEMIUM_ENABLED');
+  const upgradeModalEnabled = isFeatureEnabled('PREMIUM_UPGRADE_MODAL');
+  const blurredOverlaysEnabled = isFeatureEnabled('BLURRED_OVERLAYS');
 
   // Mock data - replace with real data later
   const overallScore = 78;
@@ -82,7 +88,13 @@ export default function ResultsScreen({ navigation }) {
   };
 
   const handleViewFeedback = (sectionId: string) => {
-    if (!isPremium) {
+    // If freemium is disabled, always allow access
+    if (!freemiumEnabled) {
+      navigation.navigate('Feedback', { sectionId });
+      return;
+    }
+
+    if (!isPremium && upgradeModalEnabled) {
       setShowUpgradeModal(true);
       return;
     }
@@ -95,8 +107,13 @@ export default function ResultsScreen({ navigation }) {
   };
 
   const handleUpgradePress = () => {
-    setShowUpgradeModal(true);
+    if (upgradeModalEnabled) {
+      setShowUpgradeModal(true);
+    }
   };
+
+  // Determine if content should be shown based on freemium status
+  const shouldShowPremiumContent = !freemiumEnabled || isPremium;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -124,11 +141,11 @@ export default function ResultsScreen({ navigation }) {
           </Text>
         </Card>
 
-        {/* Score Breakdown - Blurred for non-premium users */}
+        {/* Score Breakdown */}
         <View style={styles.breakdownSection}>
           <Text style={styles.breakdownTitle}>Score Breakdown</Text>
           <Text style={styles.breakdownSubtitle}>
-            {isPremium 
+            {shouldShowPremiumContent 
               ? 'Tap any section to see detailed feedback'
               : 'Upgrade to Premium to see detailed breakdown'
             }
@@ -148,13 +165,13 @@ export default function ResultsScreen({ navigation }) {
                   <Text style={styles.sectionIcon}>{section.icon}</Text>
                   <View style={styles.sectionInfo}>
                     <Text style={styles.sectionName}>{section.name}</Text>
-                    {isPremium && (
+                    {shouldShowPremiumContent && (
                       <Text style={styles.sectionScore}>
                         {section.score}/{section.maxScore}
                       </Text>
                     )}
                   </View>
-                  {isPremium && (
+                  {shouldShowPremiumContent && (
                     <View style={styles.sectionProgress}>
                       <View style={styles.progressBar}>
                         <View 
@@ -173,7 +190,7 @@ export default function ResultsScreen({ navigation }) {
                     </View>
                   )}
                 </View>
-                {isPremium && (
+                {shouldShowPremiumContent && (
                   <Button
                     title="View Feedback"
                     onPress={() => handleViewFeedback(section.id)}
@@ -182,22 +199,22 @@ export default function ResultsScreen({ navigation }) {
                     style={styles.feedbackButton}
                   />
                 )}
-                
-                {/* Blurred overlay for non-premium users */}
-                {!isPremium && (
-                  <BlurredOverlay
-                    onUpgrade={handleUpgradePress}
-                    message="Upgrade to see detailed feedback"
-                  />
-                )}
               </TouchableOpacity>
+              
+              {/* Blurred overlay for non-premium users */}
+              {!shouldShowPremiumContent && blurredOverlaysEnabled && (
+                <BlurredOverlay
+                  onUpgrade={handleUpgradePress}
+                  message="Upgrade to see detailed feedback"
+                />
+              )}
             </Card>
           ))}
         </View>
 
         {/* Action Buttons */}
         <View style={styles.actionSection}>
-          {isPremium && (
+          {shouldShowPremiumContent && (
             <Button
               title="Save Results"
               onPress={() => {}}
@@ -217,12 +234,14 @@ export default function ResultsScreen({ navigation }) {
       </ScrollView>
 
       {/* Premium Upgrade Modal */}
-      <PremiumUpgradeModal
-        visible={showUpgradeModal}
-        onClose={() => setShowUpgradeModal(false)}
-        onUpgrade={handleUpgrade}
-        isLoading={isLoading}
-      />
+      {upgradeModalEnabled && (
+        <PremiumUpgradeModal
+          visible={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          onUpgrade={handleUpgrade}
+          isLoading={isLoading}
+        />
+      )}
     </SafeAreaView>
   );
 }

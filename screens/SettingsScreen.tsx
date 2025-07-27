@@ -5,6 +5,7 @@ import { Card } from '../components/Card';
 import { PremiumUpgradeModal } from '../components/PremiumUpgradeModal';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
+import { isFeatureEnabled } from '../config/featureFlags';
 import { theme } from '../theme/theme';
 
 interface SettingItem {
@@ -23,6 +24,11 @@ export default function SettingsScreen({ navigation }) {
   const { user, signOut } = useAuth();
   const { isPremium, unlockPremium, isLoading } = useSubscription();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  
+  // Check if freemium features are enabled
+  const freemiumEnabled = isFeatureEnabled('FREEMIUM_ENABLED');
+  const upgradeModalEnabled = isFeatureEnabled('PREMIUM_UPGRADE_MODAL');
+  const settingsRestrictionsEnabled = isFeatureEnabled('PREMIUM_SETTINGS_RESTRICTIONS');
   
   const [settings, setSettings] = useState({
     storeHistory: true,
@@ -91,7 +97,7 @@ export default function SettingsScreen({ navigation }) {
       type: 'button',
       icon: isPremium ? '👑' : '⭐',
       onPress: () => {
-        if (!isPremium) {
+        if (!isPremium && freemiumEnabled && upgradeModalEnabled) {
           setShowUpgradeModal(true);
         }
       },
@@ -103,7 +109,7 @@ export default function SettingsScreen({ navigation }) {
       type: 'button',
       icon: '👤',
       onPress: () => Alert.alert('Edit Profile', 'Profile editing coming soon!'),
-      premium: true,
+      premium: settingsRestrictionsEnabled,
     },
     {
       id: 'storeHistory',
@@ -112,7 +118,7 @@ export default function SettingsScreen({ navigation }) {
       type: 'toggle',
       value: settings.storeHistory,
       onToggle: (value) => handleToggle('storeHistory', value),
-      premium: true,
+      premium: settingsRestrictionsEnabled,
     },
     {
       id: 'notifications',
@@ -173,7 +179,8 @@ export default function SettingsScreen({ navigation }) {
   ];
 
   const renderSettingItem = (item: SettingItem) => {
-    const isPremiumFeature = item.premium && !isPremium;
+    // If freemium is disabled, treat all features as available
+    const isPremiumFeature = item.premium && !isPremium && freemiumEnabled && settingsRestrictionsEnabled;
     
     return (
       <Card key={item.id} style={[styles.settingCard, isPremiumFeature && styles.premiumCard]}>
