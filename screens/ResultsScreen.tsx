@@ -128,6 +128,10 @@ export default function ResultsScreen({ navigation, route }) {
     navigation.navigate('Upload');
   };
 
+  const handleUpgrade = () => {
+    navigation.navigate('Upgrade');
+  };
+
   if (!analysisResult) {
     return (
       <SafeAreaView style={styles.container}>
@@ -147,6 +151,30 @@ export default function ResultsScreen({ navigation, route }) {
           <Text style={styles.subtitle}>Here's how you did</Text>
         </View>
 
+        {/* Subscription Status */}
+        {analysisResult.subscription && (
+          <Card style={styles.subscriptionCard}>
+            <View style={styles.subscriptionHeader}>
+              <Text style={styles.subscriptionTitle}>
+                {analysisResult.subscription === 'premium' ? '🌟 Premium Analysis' : '📱 Free Analysis'}
+              </Text>
+              {analysisResult.subscription === 'free' && (
+                <TouchableOpacity
+                  style={styles.upgradeButton}
+                  onPress={handleUpgrade}
+                >
+                  <Text style={styles.upgradeButtonText}>Upgrade</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            {analysisResult.usage && (
+              <Text style={styles.usageText}>
+                {analysisResult.usage.remainingAnalyses} analyses remaining this month
+              </Text>
+            )}
+          </Card>
+        )}
+
         {/* Overall Score Card */}
         <Card style={styles.overallScoreCard}>
           <View style={styles.scoreContainer}>
@@ -163,6 +191,46 @@ export default function ResultsScreen({ navigation, route }) {
              'Time for a glow up! Check the feedback below.'}
           </Text>
         </Card>
+
+        {/* Premium Insights */}
+        {analysisResult.premiumInsights && (
+          <Card style={styles.premiumCard}>
+            <View style={styles.premiumHeader}>
+              <Text style={styles.premiumTitle}>🌟 Premium Insights</Text>
+              <Text style={styles.premiumSubtitle}>Exclusive recommendations for Premium users</Text>
+            </View>
+            
+            {/* Product Recommendations */}
+            <View style={styles.insightSection}>
+              <Text style={styles.insightTitle}>💡 Product Recommendations</Text>
+              {analysisResult.premiumInsights.productRecommendations.map((rec, index) => (
+                <Text key={index} style={styles.insightText}>• {rec}</Text>
+              ))}
+            </View>
+
+            {/* Style Trends */}
+            <View style={styles.insightSection}>
+              <Text style={styles.insightTitle}>📈 Style Trends</Text>
+              {analysisResult.premiumInsights.styleTrends.map((trend, index) => (
+                <Text key={index} style={styles.insightText}>• {trend}</Text>
+              ))}
+            </View>
+
+            {/* Improvement Timeline */}
+            <View style={styles.insightSection}>
+              <Text style={styles.insightTitle}>⏰ Improvement Timeline</Text>
+              <Text style={styles.insightText}>{analysisResult.premiumInsights.improvementTimeline}</Text>
+            </View>
+
+            {/* Professional Tips */}
+            <View style={styles.insightSection}>
+              <Text style={styles.insightTitle}>🎯 Professional Tips</Text>
+              {analysisResult.premiumInsights.professionalTips.map((tip, index) => (
+                <Text key={index} style={styles.insightText}>• {tip}</Text>
+              ))}
+            </View>
+          </Card>
+        )}
 
         {/* Score Breakdown */}
         <View style={styles.breakdownSection}>
@@ -226,6 +294,23 @@ export default function ResultsScreen({ navigation, route }) {
           ))}
         </View>
 
+        {/* Upgrade CTA for Free Users */}
+        {analysisResult.subscription === 'free' && (
+          <Card style={styles.upgradeCTACard}>
+            <Text style={styles.upgradeCTATitle}>🌟 Unlock Premium Features</Text>
+            <Text style={styles.upgradeCTAText}>
+              Get detailed product recommendations, style trends, professional tips, and more with Premium!
+            </Text>
+            <Button
+              title="Upgrade to Premium"
+              onPress={handleUpgrade}
+              variant="primary"
+              size="large"
+              style={styles.upgradeCTAButton}
+            />
+          </Card>
+        )}
+
         {/* Action Buttons */}
         <View style={styles.actionSection}>
           <Button
@@ -279,6 +364,35 @@ const styles = StyleSheet.create({
     ...theme.typography.body,
     color: theme.colors.textSecondary,
   },
+  subscriptionCard: {
+    margin: theme.spacing.lg,
+    marginTop: 0,
+  },
+  subscriptionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: theme.spacing.sm,
+  },
+  subscriptionTitle: {
+    ...theme.typography.h3,
+    color: theme.colors.text,
+  },
+  upgradeButton: {
+    backgroundColor: theme.colors.accent,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.sm,
+  },
+  upgradeButtonText: {
+    ...theme.typography.bodySmall,
+    color: theme.colors.text,
+    fontWeight: '600',
+  },
+  usageText: {
+    ...theme.typography.bodySmall,
+    color: theme.colors.textSecondary,
+  },
   overallScoreCard: {
     margin: theme.spacing.lg,
     alignItems: 'center',
@@ -305,6 +419,36 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     textAlign: 'center',
     fontStyle: 'italic',
+  },
+  premiumCard: {
+    margin: theme.spacing.lg,
+    marginTop: 0,
+  },
+  premiumHeader: {
+    marginBottom: theme.spacing.lg,
+  },
+  premiumTitle: {
+    ...theme.typography.h2,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.xs,
+  },
+  premiumSubtitle: {
+    ...theme.typography.bodySmall,
+    color: theme.colors.textSecondary,
+  },
+  insightSection: {
+    marginBottom: theme.spacing.lg,
+  },
+  insightTitle: {
+    ...theme.typography.h3,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.sm,
+  },
+  insightText: {
+    ...theme.typography.bodySmall,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.xs,
+    lineHeight: 20,
   },
   breakdownSection: {
     paddingHorizontal: theme.spacing.lg,
@@ -380,6 +524,25 @@ const styles = StyleSheet.create({
   },
   feedbackButton: {
     alignSelf: 'flex-end',
+  },
+  upgradeCTACard: {
+    margin: theme.spacing.lg,
+    marginTop: 0,
+    alignItems: 'center',
+  },
+  upgradeCTATitle: {
+    ...theme.typography.h2,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.sm,
+  },
+  upgradeCTAText: {
+    ...theme.typography.body,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: theme.spacing.lg,
+  },
+  upgradeCTAButton: {
+    width: '100%',
   },
   actionSection: {
     padding: theme.spacing.lg,
