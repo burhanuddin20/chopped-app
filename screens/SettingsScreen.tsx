@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { PremiumUpgradeModal } from '../components/PremiumUpgradeModal';
+import { useAuth } from '../contexts/AuthContext';
+import { useSubscription } from '../contexts/SubscriptionContext';
 import { theme } from '../theme/theme';
 
 interface SettingItem {
@@ -13,9 +16,14 @@ interface SettingItem {
   onPress?: () => void;
   onToggle?: (value: boolean) => void;
   icon?: string;
+  premium?: boolean;
 }
 
 export default function SettingsScreen({ navigation }) {
+  const { user, signOut } = useAuth();
+  const { isPremium, unlockPremium, isLoading } = useSubscription();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  
   const [settings, setSettings] = useState({
     storeHistory: true,
     notifications: true,
@@ -24,8 +32,8 @@ export default function SettingsScreen({ navigation }) {
   });
 
   const profileData = {
-    name: 'John Doe',
-    email: 'john.doe@example.com',
+    name: user?.name || 'Guest User',
+    email: user?.email || 'guest@example.com',
     memberSince: 'January 2024',
     analysesCompleted: 3,
   };
@@ -43,7 +51,10 @@ export default function SettingsScreen({ navigation }) {
         { 
           text: 'Logout', 
           style: 'destructive',
-          onPress: () => navigation.navigate('Welcome')
+          onPress: async () => {
+            await signOut();
+            navigation.navigate('Welcome');
+          }
         },
       ]
     );
@@ -67,7 +78,24 @@ export default function SettingsScreen({ navigation }) {
     );
   };
 
+  const handleUpgrade = async () => {
+    setShowUpgradeModal(false);
+    await unlockPremium();
+  };
+
   const settingsItems: SettingItem[] = [
+    {
+      id: 'subscription',
+      title: isPremium ? 'Premium Active' : 'Upgrade to Premium',
+      subtitle: isPremium ? 'You have access to all features' : 'Unlock detailed feedback and insights',
+      type: 'button',
+      icon: isPremium ? '👑' : '⭐',
+      onPress: () => {
+        if (!isPremium) {
+          setShowUpgradeModal(true);
+        }
+      },
+    },
     {
       id: 'profile',
       title: 'Edit Profile',
@@ -75,6 +103,7 @@ export default function SettingsScreen({ navigation }) {
       type: 'button',
       icon: '👤',
       onPress: () => Alert.alert('Edit Profile', 'Profile editing coming soon!'),
+      premium: true,
     },
     {
       id: 'storeHistory',
@@ -83,6 +112,7 @@ export default function SettingsScreen({ navigation }) {
       type: 'toggle',
       value: settings.storeHistory,
       onToggle: (value) => handleToggle('storeHistory', value),
+      premium: true,
     },
     {
       id: 'notifications',
@@ -103,7 +133,7 @@ export default function SettingsScreen({ navigation }) {
     {
       id: 'analytics',
       title: 'Analytics',
-      subtitle: 'Help improve the app with anonymous data',
+      subtitle: 'Help us improve by sharing usage data',
       type: 'toggle',
       value: settings.analytics,
       onToggle: (value) => handleToggle('analytics', value),
@@ -111,13 +141,17 @@ export default function SettingsScreen({ navigation }) {
     {
       id: 'privacy',
       title: 'Privacy Policy',
-      type: 'link',
+      subtitle: 'Read our privacy policy',
+      type: 'button',
+      icon: '🔒',
       onPress: () => Alert.alert('Privacy Policy', 'Privacy policy coming soon!'),
     },
     {
       id: 'terms',
       title: 'Terms of Service',
-      type: 'link',
+      subtitle: 'Read our terms of service',
+      type: 'button',
+      icon: '📄',
       onPress: () => Alert.alert('Terms of Service', 'Terms of service coming soon!'),
     },
     {
@@ -129,29 +163,36 @@ export default function SettingsScreen({ navigation }) {
       onPress: () => Alert.alert('Support', 'Support coming soon!'),
     },
     {
-      id: 'about',
-      title: 'About Chopped',
-      subtitle: 'Version 1.0.0',
+      id: 'logout',
+      title: 'Logout',
+      subtitle: 'Sign out of your account',
       type: 'button',
-      icon: 'ℹ️',
-      onPress: () => Alert.alert('About', 'Chopped v1.0.0\nAI-powered appearance analysis'),
+      icon: '🚪',
+      onPress: handleLogout,
     },
   ];
 
   const renderSettingItem = (item: SettingItem) => {
+    const isPremiumFeature = item.premium && !isPremium;
+    
     return (
-      <Card key={item.id} style={styles.settingCard}>
+      <Card key={item.id} style={[styles.settingCard, isPremiumFeature && styles.premiumCard]}>
         <TouchableOpacity
           style={styles.settingItem}
           onPress={item.onPress}
-          disabled={item.type === 'toggle'}
+          disabled={item.type === 'toggle' || isPremiumFeature}
         >
           <View style={styles.settingContent}>
             {item.icon && <Text style={styles.settingIcon}>{item.icon}</Text>}
             <View style={styles.settingInfo}>
-              <Text style={styles.settingTitle}>{item.title}</Text>
+              <Text style={[styles.settingTitle, isPremiumFeature && styles.premiumTitle]}>
+                {item.title}
+                {isPremiumFeature && ' 🔒'}
+              </Text>
               {item.subtitle && (
-                <Text style={styles.settingSubtitle}>{item.subtitle}</Text>
+                <Text style={[styles.settingSubtitle, isPremiumFeature && styles.premiumSubtitle]}>
+                  {item.subtitle}
+                </Text>
               )}
             </View>
           </View>
@@ -162,10 +203,15 @@ export default function SettingsScreen({ navigation }) {
               onValueChange={item.onToggle}
               trackColor={{ false: theme.colors.border, true: theme.colors.accent }}
               thumbColor={theme.colors.text}
+              disabled={isPremiumFeature}
             />
           )}
           
           {item.type === 'link' && (
+            <Text style={styles.linkArrow}>›</Text>
+          )}
+          
+          {item.type === 'button' && !isPremiumFeature && (
             <Text style={styles.linkArrow}>›</Text>
           )}
         </TouchableOpacity>
@@ -236,6 +282,12 @@ export default function SettingsScreen({ navigation }) {
           </Card>
         </View>
       </ScrollView>
+      <PremiumUpgradeModal
+        visible={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        onUpgrade={handleUpgrade}
+        isLoading={isLoading}
+      />
     </SafeAreaView>
   );
 }
@@ -346,5 +398,15 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     borderColor: theme.colors.error,
+  },
+  premiumCard: {
+    opacity: 0.7,
+    backgroundColor: theme.colors.backgroundSecondary,
+  },
+  premiumTitle: {
+    color: theme.colors.textSecondary,
+  },
+  premiumSubtitle: {
+    color: theme.colors.textMuted,
   },
 });

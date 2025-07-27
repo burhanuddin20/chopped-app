@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { BlurredOverlay } from '../components/BlurredOverlay';
+import { PremiumUpgradeModal } from '../components/PremiumUpgradeModal';
+import { useSubscription } from '../contexts/SubscriptionContext';
 import { theme } from '../theme/theme';
 
 interface ScoreSection {
@@ -15,6 +18,9 @@ interface ScoreSection {
 }
 
 export default function ResultsScreen({ navigation }) {
+  const { isPremium, unlockPremium, isLoading } = useSubscription();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
   // Mock data - replace with real data later
   const overallScore = 78;
   const sections: ScoreSection[] = [
@@ -76,7 +82,20 @@ export default function ResultsScreen({ navigation }) {
   };
 
   const handleViewFeedback = (sectionId: string) => {
+    if (!isPremium) {
+      setShowUpgradeModal(true);
+      return;
+    }
     navigation.navigate('Feedback', { sectionId });
+  };
+
+  const handleUpgrade = async () => {
+    setShowUpgradeModal(false);
+    await unlockPremium();
+  };
+
+  const handleUpgradePress = () => {
+    setShowUpgradeModal(true);
   };
 
   return (
@@ -88,7 +107,7 @@ export default function ResultsScreen({ navigation }) {
           <Text style={styles.subtitle}>Here's how you did</Text>
         </View>
 
-        {/* Overall Score Card */}
+        {/* Overall Score Card - Always Visible */}
         <Card style={styles.overallScoreCard}>
           <View style={styles.scoreContainer}>
             <Text style={styles.scoreEmoji}>{getScoreEmoji(overallScore)}</Text>
@@ -105,11 +124,14 @@ export default function ResultsScreen({ navigation }) {
           </Text>
         </Card>
 
-        {/* Score Breakdown */}
+        {/* Score Breakdown - Blurred for non-premium users */}
         <View style={styles.breakdownSection}>
           <Text style={styles.breakdownTitle}>Score Breakdown</Text>
           <Text style={styles.breakdownSubtitle}>
-            Tap any section to see detailed feedback
+            {isPremium 
+              ? 'Tap any section to see detailed feedback'
+              : 'Upgrade to Premium to see detailed breakdown'
+            }
           </Text>
         </View>
 
@@ -126,34 +148,48 @@ export default function ResultsScreen({ navigation }) {
                   <Text style={styles.sectionIcon}>{section.icon}</Text>
                   <View style={styles.sectionInfo}>
                     <Text style={styles.sectionName}>{section.name}</Text>
-                    <Text style={styles.sectionScore}>
-                      {section.score}/{section.maxScore}
-                    </Text>
+                    {isPremium && (
+                      <Text style={styles.sectionScore}>
+                        {section.score}/{section.maxScore}
+                      </Text>
+                    )}
                   </View>
-                  <View style={styles.sectionProgress}>
-                    <View style={styles.progressBar}>
-                      <View 
-                        style={[
-                          styles.progressFill, 
-                          { 
-                            width: `${(section.score / section.maxScore) * 100}%`,
-                            backgroundColor: section.color,
-                          }
-                        ]} 
-                      />
+                  {isPremium && (
+                    <View style={styles.sectionProgress}>
+                      <View style={styles.progressBar}>
+                        <View 
+                          style={[
+                            styles.progressFill, 
+                            { 
+                              width: `${(section.score / section.maxScore) * 100}%`,
+                              backgroundColor: section.color,
+                            }
+                          ]} 
+                        />
+                      </View>
+                      <Text style={[styles.percentage, { color: section.color }]}>
+                        {Math.round((section.score / section.maxScore) * 100)}%
+                      </Text>
                     </View>
-                    <Text style={[styles.percentage, { color: section.color }]}>
-                      {Math.round((section.score / section.maxScore) * 100)}%
-                    </Text>
-                  </View>
+                  )}
                 </View>
-                <Button
-                  title="View Feedback"
-                  onPress={() => handleViewFeedback(section.id)}
-                  variant="outline"
-                  size="small"
-                  style={styles.feedbackButton}
-                />
+                {isPremium && (
+                  <Button
+                    title="View Feedback"
+                    onPress={() => handleViewFeedback(section.id)}
+                    variant="outline"
+                    size="small"
+                    style={styles.feedbackButton}
+                  />
+                )}
+                
+                {/* Blurred overlay for non-premium users */}
+                {!isPremium && (
+                  <BlurredOverlay
+                    onUpgrade={handleUpgradePress}
+                    message="Upgrade to see detailed feedback"
+                  />
+                )}
               </TouchableOpacity>
             </Card>
           ))}
@@ -161,13 +197,15 @@ export default function ResultsScreen({ navigation }) {
 
         {/* Action Buttons */}
         <View style={styles.actionSection}>
-          <Button
-            title="Save Results"
-            onPress={() => {}}
-            variant="secondary"
-            size="large"
-            style={styles.actionButton}
-          />
+          {isPremium && (
+            <Button
+              title="Save Results"
+              onPress={() => {}}
+              variant="secondary"
+              size="large"
+              style={styles.actionButton}
+            />
+          )}
           <Button
             title="New Analysis"
             onPress={() => navigation.navigate('Upload')}
@@ -177,6 +215,14 @@ export default function ResultsScreen({ navigation }) {
           />
         </View>
       </ScrollView>
+
+      {/* Premium Upgrade Modal */}
+      <PremiumUpgradeModal
+        visible={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        onUpgrade={handleUpgrade}
+        isLoading={isLoading}
+      />
     </SafeAreaView>
   );
 }

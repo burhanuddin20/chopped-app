@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Ima
 import * as ImagePicker from 'expo-image-picker';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { useSubscription } from '../contexts/SubscriptionContext';
 import { theme } from '../theme/theme';
 
 interface PhotoData {
@@ -15,6 +16,7 @@ interface PhotoData {
 
 export default function UploadScreen({ navigation }) {
   const [photos, setPhotos] = useState<PhotoData[]>([]);
+  const { updateHasUploadedPhoto } = useSubscription();
 
   const photoTypes: Omit<PhotoData, 'id' | 'uri'>[] = [
     {
@@ -74,6 +76,14 @@ export default function UploadScreen({ navigation }) {
   };
 
   const canContinue = photos.length >= 2;
+
+  const handleAnalyze = async () => {
+    if (canContinue) {
+      // Mark that user has uploaded photos
+      await updateHasUploadedPhoto(true);
+      navigation.navigate('Analysis');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -144,7 +154,7 @@ export default function UploadScreen({ navigation }) {
       <View style={styles.footer}>
         <Button
           title="Continue"
-          onPress={() => navigation.navigate('Analysis')}
+          onPress={handleAnalyze}
           disabled={!canContinue}
           size="large"
           style={styles.continueButton}
