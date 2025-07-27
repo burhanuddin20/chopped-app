@@ -1,20 +1,61 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, Image } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, Dimensions, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Button } from '../components/Button';
+import { Card } from '../components/Card';
+import { useAuth } from '../contexts/AuthContext';
 import { theme } from '../theme/theme';
 
-export default function WelcomeScreen({ navigation }) {
+const { width, height } = Dimensions.get('window');
+
+interface WelcomeScreenProps {
+  navigation: any;
+}
+
+export default function WelcomeScreen({ navigation }: WelcomeScreenProps) {
+  const { signInWithGoogle, signInWithApple, isLoading } = useAuth();
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await signInWithGoogle();
+      navigation.navigate('MainApp');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to sign in with Google. Please try again.');
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    try {
+      await signInWithApple();
+      navigation.navigate('MainApp');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to sign in with Apple. Please try again.');
+    }
+  };
+
+  const handleContinueWithoutAuth = () => {
+    navigation.navigate('MainApp');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient
-        colors={[theme.colors.background, theme.colors.primary]}
+        colors={[theme.colors.background, theme.colors.surface]}
         style={styles.gradient}
       >
+        {/* Animated background elements */}
+        <View style={styles.backgroundElements}>
+          <View style={[styles.neonCircle, styles.neonCircle1]} />
+          <View style={[styles.neonCircle, styles.neonCircle2]} />
+          <View style={[styles.neonCircle, styles.neonCircle3]} />
+        </View>
+
         <View style={styles.content}>
           {/* Logo Section */}
           <View style={styles.logoSection}>
-            <Text style={styles.logo}>CHOPPED</Text>
+            <Card style={styles.logoCard}>
+              <Text style={styles.logo}>CHOPPED</Text>
+            </Card>
             <Text style={styles.tagline}>Don't be chopped</Text>
             <Text style={styles.subtitle}>
               Get AI-powered feedback to level up your appearance
@@ -25,18 +66,22 @@ export default function WelcomeScreen({ navigation }) {
           <View style={styles.buttonSection}>
             <Button
               title="Continue with Google"
-              onPress={() => {}}
+              onPress={handleGoogleSignIn}
               variant="secondary"
               size="large"
               style={styles.button}
+              loading={isLoading}
+              disabled={isLoading}
             />
             
             <Button
               title="Continue with Apple"
-              onPress={() => {}}
+              onPress={handleAppleSignIn}
               variant="secondary"
               size="large"
               style={styles.button}
+              loading={isLoading}
+              disabled={isLoading}
             />
             
             <View style={styles.divider}>
@@ -47,10 +92,11 @@ export default function WelcomeScreen({ navigation }) {
             
             <Button
               title="I'm 18+ – Continue"
-              onPress={() => navigation.navigate('MainApp')}
+              onPress={handleContinueWithoutAuth}
               variant="primary"
               size="large"
               style={styles.button}
+              disabled={isLoading}
             />
             
             <Text style={styles.disclaimer}>
@@ -71,6 +117,36 @@ const styles = StyleSheet.create({
   gradient: {
     flex: 1,
   },
+  backgroundElements: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: -1,
+  },
+  neonCircle: {
+    position: 'absolute',
+    width: width * 0.3,
+    height: width * 0.3,
+    borderRadius: width * 0.15,
+    opacity: 0.3,
+  },
+  neonCircle1: {
+    backgroundColor: theme.colors.primary,
+    top: height * 0.2,
+    left: width * 0.1,
+  },
+  neonCircle2: {
+    backgroundColor: theme.colors.accent,
+    top: height * 0.6,
+    right: width * 0.1,
+  },
+  neonCircle3: {
+    backgroundColor: theme.colors.secondary,
+    bottom: height * 0.1,
+    left: width * 0.5,
+  },
   content: {
     flex: 1,
     justifyContent: 'space-between',
@@ -83,22 +159,34 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  logoCard: {
+    paddingHorizontal: theme.spacing.xl,
+    paddingVertical: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
+  },
   logo: {
-    ...theme.typography.h1,
+    fontSize: 42,
+    fontWeight: '900' as const,
+    lineHeight: 48,
     color: theme.colors.accent,
-    letterSpacing: 2,
-    marginBottom: theme.spacing.sm,
+    letterSpacing: 3,
+    textAlign: 'center',
   },
   tagline: {
-    ...theme.typography.h2,
+    fontSize: 32,
+    fontWeight: '800' as const,
+    lineHeight: 38,
     color: theme.colors.text,
     marginBottom: theme.spacing.md,
+    textAlign: 'center',
   },
   subtitle: {
-    ...theme.typography.body,
+    fontSize: 16,
+    fontWeight: '400' as const,
+    lineHeight: 24,
     color: theme.colors.textSecondary,
     textAlign: 'center',
-    maxWidth: 280,
+    maxWidth: 300,
   },
   buttonSection: {
     width: '100%',
@@ -113,16 +201,21 @@ const styles = StyleSheet.create({
   },
   dividerLine: {
     flex: 1,
-    height: 1,
-    backgroundColor: theme.colors.border,
+    height: 2,
+    backgroundColor: theme.colors.accent,
+    opacity: 0.3,
   },
   dividerText: {
-    ...theme.typography.bodySmall,
-    color: theme.colors.textMuted,
+    fontSize: 14,
+    fontWeight: '600' as const,
+    lineHeight: 20,
+    color: theme.colors.accent,
     marginHorizontal: theme.spacing.md,
   },
   disclaimer: {
-    ...theme.typography.caption,
+    fontSize: 12,
+    fontWeight: '400' as const,
+    lineHeight: 18,
     color: theme.colors.textMuted,
     textAlign: 'center',
     marginTop: theme.spacing.lg,
