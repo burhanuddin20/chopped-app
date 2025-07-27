@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, Dimensions, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { Checkbox } from '../components/Checkbox';
 import { useAuth } from '../contexts/AuthContext';
 import { theme } from '../theme/theme';
 
@@ -14,8 +15,14 @@ interface WelcomeScreenProps {
 
 export default function WelcomeScreen({ navigation }: WelcomeScreenProps) {
   const { signInWithGoogle, signInWithApple, isLoading } = useAuth();
+  const [isAgeVerified, setIsAgeVerified] = useState(false);
 
   const handleGoogleSignIn = async () => {
+    if (!isAgeVerified) {
+      Alert.alert('Age Verification Required', 'Please confirm that you are 18 or older to continue.');
+      return;
+    }
+    
     try {
       await signInWithGoogle();
       navigation.navigate('MainApp');
@@ -25,6 +32,11 @@ export default function WelcomeScreen({ navigation }: WelcomeScreenProps) {
   };
 
   const handleAppleSignIn = async () => {
+    if (!isAgeVerified) {
+      Alert.alert('Age Verification Required', 'Please confirm that you are 18 or older to continue.');
+      return;
+    }
+    
     try {
       await signInWithApple();
       navigation.navigate('MainApp');
@@ -34,6 +46,11 @@ export default function WelcomeScreen({ navigation }: WelcomeScreenProps) {
   };
 
   const handleContinueWithoutAuth = () => {
+    if (!isAgeVerified) {
+      Alert.alert('Age Verification Required', 'Please confirm that you are 18 or older to continue.');
+      return;
+    }
+    
     navigation.navigate('MainApp');
   };
 
@@ -91,13 +108,22 @@ export default function WelcomeScreen({ navigation }: WelcomeScreenProps) {
             </View>
             
             <Button
-              title="I'm 18+ – Continue"
+              title="Continue as guest"
               onPress={handleContinueWithoutAuth}
               variant="primary"
               size="large"
               style={styles.button}
               disabled={isLoading}
             />
+            
+            {/* Age Verification Checkbox */}
+            <View style={styles.ageVerificationContainer}>
+              <Checkbox
+                checked={isAgeVerified}
+                onToggle={() => setIsAgeVerified(!isAgeVerified)}
+                label="I confirm that I am 18 years of age or older"
+              />
+            </View>
             
             <Text style={styles.disclaimer}>
               By continuing, you agree to our Terms of Service and Privacy Policy
@@ -219,5 +245,9 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
     textAlign: 'center',
     marginTop: theme.spacing.lg,
+  },
+  ageVerificationContainer: {
+    marginTop: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
   },
 });
