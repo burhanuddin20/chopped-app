@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { BottomTabNavigator } from '../components/BottomTabNavigator';
 import ResultsScreen from './ResultsScreen';
@@ -14,6 +14,13 @@ interface MainAppScreenProps {
 
 export default function MainAppScreen({ navigation, route }: MainAppScreenProps) {
   const [activeTab, setActiveTab] = useState('home');
+
+  // If we have analysis results from upload, ensure we're on the home tab
+  useEffect(() => {
+    if (route?.params?.analysisResult) {
+      setActiveTab('home');
+    }
+  }, [route?.params?.analysisResult]);
 
   const handleTabPress = (screenName: string) => {
     setActiveTab(screenName === 'Results' ? 'home' : 

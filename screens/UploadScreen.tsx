@@ -90,9 +90,9 @@ export default function UploadScreen({ navigation }) {
         // Perform the actual analysis FIRST (before navigation)
         const analysisResult = await AnalysisService.analyzePhotos(photos);
         
-        // Only navigate if API call succeeds
+        // Navigate to MainApp with the analysis result (this will show the nav bar)
         navigation.navigate('Analysis');
-        navigation.replace('Results', { analysisResult });
+        navigation.replace('MainApp', { analysisResult });
       } catch (error) {
         console.error('Analysis failed:', error);
         Alert.alert(
