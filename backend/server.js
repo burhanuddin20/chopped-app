@@ -100,10 +100,9 @@ app.post('/analyze',
 // Image analysis function
 async function analyzeImages(files, photoTypes) {
   try {
-    // If OpenAI is not available, use mock data
+    // If OpenAI is not available, throw an error
     if (!openai) {
-      console.log('Using mock analysis (OpenAI not available)');
-      return generateMockAnalysis(files.length);
+      throw new Error('OpenAI API not configured. Please check your API key.');
     }
 
     // Convert images to base64 for OpenAI
@@ -227,33 +226,6 @@ function validateAndNormalizeAnalysis(result) {
   }
 
   return normalized;
-}
-
-// Generate mock analysis for fallback
-function generateMockAnalysis(photoCount) {
-  const baseScore = 60 + (photoCount * 5);
-  const randomVariation = Math.random() * 20 - 10;
-  const totalScore = Math.max(0, Math.min(100, Math.round(baseScore + randomVariation)));
-
-  const breakdown = {
-    face: Math.round(totalScore * 0.25),
-    hair: Math.round(totalScore * 0.20),
-    skin: Math.round(totalScore * 0.15),
-    style: Math.round(totalScore * 0.20),
-    body: Math.round(totalScore * 0.20),
-  };
-
-  return {
-    score: totalScore,
-    breakdown,
-    suggestions: {
-      face: "Great facial features! Consider different lighting angles.",
-      hair: "Your hair style suits you well. A trim could enhance it further.",
-      skin: "Good skin condition. A moisturizer could add extra glow.",
-      style: "Nice style choices. Experiment with different fits.",
-      body: "Good posture! Standing tall makes a big difference.",
-    }
-  };
 }
 
 // Error handling middleware

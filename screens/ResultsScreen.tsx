@@ -45,14 +45,15 @@ export default function ResultsScreen({ navigation, route }: ResultsScreenProps)
     }
   }, [route?.params]);
 
-  // Use real data if available, otherwise fallback to mock data
-  const overallScore = analysisResult?.score || 78;
+  // Use real data only - no fallbacks
+  const overallScore = analysisResult?.score;
   
-  const sections: ScoreSection[] = [
+  // Only show sections if we have real data
+  const sections: ScoreSection[] = analysisResult ? [
     {
       id: 'face',
       name: 'Face Harmony',
-      score: analysisResult?.breakdown.face || 18,
+      score: analysisResult.breakdown.face,
       maxScore: 25,
       icon: '😊',
       color: theme.colors.success,
@@ -60,7 +61,7 @@ export default function ResultsScreen({ navigation, route }: ResultsScreenProps)
     {
       id: 'hair',
       name: 'Hair & Beard',
-      score: analysisResult?.breakdown.hair || 16,
+      score: analysisResult.breakdown.hair,
       maxScore: 25,
       icon: '💇‍♂️',
       color: theme.colors.warning,
@@ -68,7 +69,7 @@ export default function ResultsScreen({ navigation, route }: ResultsScreenProps)
     {
       id: 'skin',
       name: 'Skin',
-      score: analysisResult?.breakdown.skin || 15,
+      score: analysisResult.breakdown.skin,
       maxScore: 20,
       icon: '✨',
       color: theme.colors.accent,
@@ -76,7 +77,7 @@ export default function ResultsScreen({ navigation, route }: ResultsScreenProps)
     {
       id: 'style',
       name: 'Outfit & Style',
-      score: analysisResult?.breakdown.style || 14,
+      score: analysisResult.breakdown.style,
       maxScore: 20,
       icon: '👔',
       color: theme.colors.success,
@@ -84,12 +85,12 @@ export default function ResultsScreen({ navigation, route }: ResultsScreenProps)
     {
       id: 'body',
       name: 'Posture & Body',
-      score: analysisResult?.breakdown.body || 15,
+      score: analysisResult.breakdown.body,
       maxScore: 20,
       icon: '💪',
       color: theme.colors.warning,
     },
-  ];
+  ] : [];
 
   const getScoreEmoji = (score: number) => {
     if (score >= 80) return '🔥';
@@ -151,113 +152,131 @@ export default function ResultsScreen({ navigation, route }: ResultsScreenProps)
           <Text style={styles.subtitle}>Here's how you did</Text>
         </View>
 
-        {/* Overall Score Card - Always Visible */}
-        <Card style={styles.overallScoreCard}>
-          <View style={styles.scoreContainer}>
-            <Text style={styles.scoreEmoji}>{getScoreEmoji(overallScore)}</Text>
-            <Text style={[styles.overallScore, { color: getScoreColor(overallScore) }]}>
-              {overallScore}
+        {/* Show message if no analysis result */}
+        {!analysisResult ? (
+          <Card style={styles.overallScoreCard}>
+            <View style={styles.scoreContainer}>
+              <Text style={styles.scoreEmoji}>🤔</Text>
+              <Text style={[styles.overallScore, { color: theme.colors.textSecondary }]}>
+                No Analysis
+              </Text>
+              <Text style={styles.scoreLabel}>Upload photos to get started</Text>
+            </View>
+            <Text style={styles.scoreMessage}>
+              Complete an analysis to see your Chop Score and detailed feedback.
             </Text>
-            <Text style={styles.scoreLabel}>out of 100</Text>
-          </View>
-          <Text style={styles.scoreMessage}>
-            {overallScore >= 80 ? 'Excellent! You\'re looking sharp!' :
-             overallScore >= 70 ? 'Good job! Room for improvement.' :
-             overallScore >= 60 ? 'Not bad! Let\'s level up.' :
-             'Time for a glow up! Check the feedback below.'}
-          </Text>
-        </Card>
+          </Card>
+        ) : (
+          <>
+            {/* Overall Score Card - Always Visible */}
+            <Card style={styles.overallScoreCard}>
+              <View style={styles.scoreContainer}>
+                <Text style={styles.scoreEmoji}>{getScoreEmoji(overallScore || 0)}</Text>
+                <Text style={[styles.overallScore, { color: getScoreColor(overallScore || 0) }]}>
+                  {overallScore || 0}
+                </Text>
+                <Text style={styles.scoreLabel}>out of 100</Text>
+              </View>
+              <Text style={styles.scoreMessage}>
+                {overallScore >= 80 ? 'Excellent! You\'re looking sharp!' :
+                 overallScore >= 70 ? 'Good job! Room for improvement.' :
+                 overallScore >= 60 ? 'Not bad! Let\'s level up.' :
+                 'Time for a glow up! Check the feedback below.'}
+              </Text>
+            </Card>
 
-        {/* Score Breakdown */}
-        <View style={styles.breakdownSection}>
-          <Text style={styles.breakdownTitle}>Score Breakdown</Text>
-          <Text style={styles.breakdownSubtitle}>
-            {shouldShowPremiumContent 
-              ? 'Tap any section to see detailed feedback'
-              : 'Upgrade to Premium to see detailed breakdown'
-            }
-          </Text>
-        </View>
+            {/* Score Breakdown */}
+            <View style={styles.breakdownSection}>
+              <Text style={styles.breakdownTitle}>Score Breakdown</Text>
+              <Text style={styles.breakdownSubtitle}>
+                {shouldShowPremiumContent 
+                  ? 'Tap any section to see detailed feedback'
+                  : 'Upgrade to Premium to see detailed breakdown'
+                }
+              </Text>
+            </View>
 
-        {/* Section Cards */}
-        <View style={styles.sectionsContainer}>
-          {sections.map((section) => (
-            <Card key={section.id} style={styles.sectionCard}>
-              <TouchableOpacity
-                style={styles.sectionContent}
-                onPress={() => handleViewFeedback(section.id)}
-                activeOpacity={0.8}
-              >
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionIcon}>{section.icon}</Text>
-                  <View style={styles.sectionInfo}>
-                    <Text style={styles.sectionName}>{section.name}</Text>
-                    {shouldShowPremiumContent && (
-                      <Text style={styles.sectionScore}>
-                        {section.score}/{section.maxScore}
-                      </Text>
-                    )}
-                  </View>
-                  {shouldShowPremiumContent && (
-                    <View style={styles.sectionProgress}>
-                      <View style={styles.progressBar}>
-                        <View 
-                          style={[
-                            styles.progressFill, 
-                            { 
-                              width: `${(section.score / section.maxScore) * 100}%`,
-                              backgroundColor: section.color,
-                            }
-                          ]} 
-                        />
-                      </View>
-                      <Text style={[styles.percentage, { color: section.color }]}>
-                        {Math.round((section.score / section.maxScore) * 100)}%
-                      </Text>
-                    </View>
-                  )}
-                </View>
-                {shouldShowPremiumContent && (
-                  <Button
-                    title="View Feedback"
+            {/* Section Cards */}
+            <View style={styles.sectionsContainer}>
+              {sections.map((section) => (
+                <Card key={section.id} style={styles.sectionCard}>
+                  <TouchableOpacity
+                    style={styles.sectionContent}
                     onPress={() => handleViewFeedback(section.id)}
-                    variant="outline"
-                    size="small"
-                    style={styles.feedbackButton}
-                  />
-                )}
-              </TouchableOpacity>
-              
-              {/* Blurred overlay for non-premium users */}
-              {!shouldShowPremiumContent && blurredOverlaysEnabled && (
-                <BlurredOverlay
-                  onUpgrade={handleUpgradePress}
-                  message="Upgrade to see detailed feedback"
+                    activeOpacity={0.8}
+                  >
+                    <View style={styles.sectionHeader}>
+                      <Text style={styles.sectionIcon}>{section.icon}</Text>
+                      <View style={styles.sectionInfo}>
+                        <Text style={styles.sectionName}>{section.name}</Text>
+                        {shouldShowPremiumContent && (
+                          <Text style={styles.sectionScore}>
+                            {section.score}/{section.maxScore}
+                          </Text>
+                        )}
+                      </View>
+                      {shouldShowPremiumContent && (
+                        <View style={styles.sectionProgress}>
+                          <View style={styles.progressBar}>
+                            <View 
+                              style={[
+                                styles.progressFill, 
+                                { 
+                                  width: `${(section.score / section.maxScore) * 100}%`,
+                                  backgroundColor: section.color,
+                                }
+                              ]} 
+                            />
+                          </View>
+                          <Text style={[styles.percentage, { color: section.color }]}>
+                            {Math.round((section.score / section.maxScore) * 100)}%
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                    {shouldShowPremiumContent && (
+                      <Button
+                        title="View Feedback"
+                        onPress={() => handleViewFeedback(section.id)}
+                        variant="outline"
+                        size="small"
+                        style={styles.feedbackButton}
+                      />
+                    )}
+                  </TouchableOpacity>
+                  
+                  {/* Blurred overlay for non-premium users */}
+                  {!shouldShowPremiumContent && blurredOverlaysEnabled && (
+                    <BlurredOverlay
+                      onUpgrade={handleUpgradePress}
+                      message="Upgrade to see detailed feedback"
+                    />
+                  )}
+                </Card>
+              ))}
+            </View>
+
+            {/* Action Buttons */}
+            <View style={styles.actionSection}>
+              {shouldShowPremiumContent && (
+                <Button
+                  title="Save Results"
+                  onPress={() => {}}
+                  variant="secondary"
+                  size="large"
+                  style={styles.actionButton}
                 />
               )}
-            </Card>
-          ))}
-        </View>
-
-        {/* Action Buttons */}
-        <View style={styles.actionSection}>
-          {shouldShowPremiumContent && (
-            <Button
-              title="Save Results"
-              onPress={() => {}}
-              variant="secondary"
-              size="large"
-              style={styles.actionButton}
-            />
-          )}
-          <Button
-            title="New Analysis"
-            onPress={() => navigation.navigate('Upload')}
-            variant="primary"
-            size="large"
-            style={styles.actionButton}
-          />
-        </View>
+              <Button
+                title="New Analysis"
+                onPress={() => navigation.navigate('Upload')}
+                variant="primary"
+                size="large"
+                style={styles.actionButton}
+              />
+            </View>
+          </>
+        )}
       </ScrollView>
 
       {/* Premium Upgrade Modal */}
