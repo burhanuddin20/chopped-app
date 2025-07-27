@@ -6,17 +6,13 @@ import { Card } from '../components/Card';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { isFeatureEnabled } from '../config/featureFlags';
 import { theme } from '../theme/theme';
+import AnalysisService, { PhotoData, AnalysisResult } from '../services/analysisService';
 
-interface PhotoData {
-  id: string;
-  type: 'front' | 'side' | 'body';
-  uri: string;
-  label: string;
-  description: string;
-}
+
 
 export default function UploadScreen({ navigation }) {
   const [photos, setPhotos] = useState<PhotoData[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { updateHasUploadedPhoto } = useSubscription();
   
   // Check if upload tracking is enabled
@@ -82,12 +78,33 @@ export default function UploadScreen({ navigation }) {
   const canContinue = photos.length >= 2;
 
   const handleAnalyze = async () => {
-    if (canContinue) {
-      // Only track upload if the feature is enabled
-      if (uploadTrackingEnabled) {
-        await updateHasUploadedPhoto(true);
+    if (canContinue && !isAnalyzing) {
+      setIsAnalyzing(true);
+      
+      try {
+        // Only track upload if the feature is enabled
+        if (uploadTrackingEnabled) {
+          await updateHasUploadedPhoto(true);
+        }
+
+        // Navigate to analysis screen first
+        navigation.navigate('Analysis');
+        
+        // Perform the actual analysis
+        const analysisResult = await AnalysisService.analyzePhotos(photos);
+        
+        // Navigate to results with the analysis data
+        navigation.replace('Results', { analysisResult });
+      } catch (error) {
+        console.error('Analysis failed:', error);
+        Alert.alert(
+          'Analysis Failed',
+          'There was an error analyzing your photos. Please try again.',
+          [{ text: 'OK' }]
+        );
+      } finally {
+        setIsAnalyzing(false);
       }
-      navigation.navigate('Analysis');
     }
   };
 
@@ -159,9 +176,9 @@ export default function UploadScreen({ navigation }) {
 
       <View style={styles.footer}>
         <Button
-          title="Continue"
+          title={isAnalyzing ? "Analyzing..." : "Continue"}
           onPress={handleAnalyze}
-          disabled={!canContinue}
+          disabled={!canContinue || isAnalyzing}
           size="large"
           style={styles.continueButton}
         />
