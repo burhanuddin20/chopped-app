@@ -2,10 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../theme/theme';
+import AnalysisService, { AnalysisResult } from '../services/analysisService';
 
-export default function AnalysisScreen({ navigation }) {
+export default function AnalysisScreen({ navigation, route }) {
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const spinValue = new Animated.Value(0);
 
   const steps = [
@@ -27,7 +29,17 @@ export default function AnalysisScreen({ navigation }) {
     );
     spinAnimation.start();
 
-    // Simulate progress
+    // Check if we have analysis result from route params
+    if (route.params?.analysisResult) {
+      setAnalysisResult(route.params.analysisResult);
+      // Navigate to results immediately
+      setTimeout(() => {
+        navigation.replace('Results', { analysisResult: route.params.analysisResult });
+      }, 2000);
+      return;
+    }
+
+    // Simulate progress for demo purposes
     const progressInterval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 100) {
@@ -54,7 +66,7 @@ export default function AnalysisScreen({ navigation }) {
       clearInterval(stepInterval);
       spinAnimation.stop();
     };
-  }, [progress]);
+  }, [progress, route.params]);
 
   const spin = spinValue.interpolate({
     inputRange: [0, 1],

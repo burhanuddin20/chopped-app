@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Button } from '../components/Button';
@@ -8,6 +8,7 @@ import { PremiumUpgradeModal } from '../components/PremiumUpgradeModal';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { isFeatureEnabled } from '../config/featureFlags';
 import { theme } from '../theme/theme';
+import { AnalysisResult } from '../services/analysisService';
 
 interface ScoreSection {
   id: string;
@@ -18,22 +19,31 @@ interface ScoreSection {
   color: string;
 }
 
-export default function ResultsScreen({ navigation }) {
+export default function ResultsScreen({ navigation, route }) {
   const { isPremium, unlockPremium, isLoading } = useSubscription();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
 
   // Check if freemium features are enabled
   const freemiumEnabled = isFeatureEnabled('FREEMIUM_ENABLED');
   const upgradeModalEnabled = isFeatureEnabled('PREMIUM_UPGRADE_MODAL');
   const blurredOverlaysEnabled = isFeatureEnabled('BLURRED_OVERLAYS');
 
-  // Mock data - replace with real data later
-  const overallScore = 78;
+  // Load analysis result from route params
+  useEffect(() => {
+    if (route.params?.analysisResult) {
+      setAnalysisResult(route.params.analysisResult);
+    }
+  }, [route.params]);
+
+  // Use real data if available, otherwise fallback to mock data
+  const overallScore = analysisResult?.score || 78;
+  
   const sections: ScoreSection[] = [
     {
       id: 'face',
       name: 'Face Harmony',
-      score: 18,
+      score: analysisResult?.breakdown.face || 18,
       maxScore: 25,
       icon: '😊',
       color: theme.colors.success,
@@ -41,7 +51,7 @@ export default function ResultsScreen({ navigation }) {
     {
       id: 'hair',
       name: 'Hair & Beard',
-      score: 16,
+      score: analysisResult?.breakdown.hair || 16,
       maxScore: 25,
       icon: '💇‍♂️',
       color: theme.colors.warning,
@@ -49,23 +59,23 @@ export default function ResultsScreen({ navigation }) {
     {
       id: 'skin',
       name: 'Skin',
-      score: 15,
+      score: analysisResult?.breakdown.skin || 15,
       maxScore: 20,
       icon: '✨',
       color: theme.colors.accent,
     },
     {
-      id: 'outfit',
+      id: 'style',
       name: 'Outfit & Style',
-      score: 14,
+      score: analysisResult?.breakdown.style || 14,
       maxScore: 20,
       icon: '👔',
       color: theme.colors.success,
     },
     {
-      id: 'posture',
+      id: 'body',
       name: 'Posture & Body',
-      score: 15,
+      score: analysisResult?.breakdown.body || 15,
       maxScore: 20,
       icon: '💪',
       color: theme.colors.warning,
@@ -90,7 +100,11 @@ export default function ResultsScreen({ navigation }) {
   const handleViewFeedback = (sectionId: string) => {
     // If freemium is disabled, always allow access
     if (!freemiumEnabled) {
-      navigation.navigate('Feedback', { sectionId });
+      navigation.navigate('Feedback', { 
+        sectionId,
+        analysisResult,
+        suggestion: analysisResult?.suggestions[sectionId as keyof typeof analysisResult.suggestions]
+      });
       return;
     }
 
@@ -98,7 +112,11 @@ export default function ResultsScreen({ navigation }) {
       setShowUpgradeModal(true);
       return;
     }
-    navigation.navigate('Feedback', { sectionId });
+    navigation.navigate('Feedback', { 
+      sectionId,
+      analysisResult,
+      suggestion: analysisResult?.suggestions[sectionId as keyof typeof analysisResult.suggestions]
+    });
   };
 
   const handleUpgrade = async () => {
