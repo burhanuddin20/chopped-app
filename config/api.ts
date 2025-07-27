@@ -2,7 +2,7 @@
 export const API_CONFIG = {
   // Base URL for the backend API
   BASE_URL: __DEV__ 
-    ? 'http://localhost:3000'  // Development
+    ? 'http://192.168.0.4:3000'  // Development - use computer's IP
     : 'https://api.chopped.app', // Production (replace with your actual API URL)
   
   // API endpoints

@@ -87,21 +87,20 @@ export default function UploadScreen({ navigation }) {
           await updateHasUploadedPhoto(true);
         }
 
-        // Navigate to analysis screen first
-        navigation.navigate('Analysis');
-        
-        // Perform the actual analysis
+        // Perform the actual analysis FIRST (before navigation)
         const analysisResult = await AnalysisService.analyzePhotos(photos);
         
-        // Navigate to results with the analysis data
+        // Only navigate if API call succeeds
+        navigation.navigate('Analysis');
         navigation.replace('Results', { analysisResult });
       } catch (error) {
         console.error('Analysis failed:', error);
         Alert.alert(
           'Analysis Failed',
-          'There was an error analyzing your photos. Please try again.',
+          'There was an error analyzing your photos. Please try again later.',
           [{ text: 'OK' }]
         );
+        // Don't navigate anywhere - stay on upload screen
       } finally {
         setIsAnalyzing(false);
       }
