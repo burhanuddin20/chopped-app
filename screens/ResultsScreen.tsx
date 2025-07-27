@@ -1,9 +1,10 @@
-import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { theme } from '../theme/theme';
+import { AnalysisResult, saveAnalysisResult } from '../services/analysisService';
 
 interface ScoreSection {
   id: string;
@@ -12,53 +13,69 @@ interface ScoreSection {
   maxScore: number;
   icon: string;
   color: string;
+  suggestion: string;
 }
 
-export default function ResultsScreen({ navigation }) {
-  // Mock data - replace with real data later
-  const overallScore = 78;
-  const sections: ScoreSection[] = [
-    {
-      id: 'face',
-      name: 'Face Harmony',
-      score: 18,
-      maxScore: 25,
-      icon: '😊',
-      color: theme.colors.success,
-    },
-    {
-      id: 'hair',
-      name: 'Hair & Beard',
-      score: 16,
-      maxScore: 25,
-      icon: '💇‍♂️',
-      color: theme.colors.warning,
-    },
-    {
-      id: 'skin',
-      name: 'Skin',
-      score: 15,
-      maxScore: 20,
-      icon: '✨',
-      color: theme.colors.accent,
-    },
-    {
-      id: 'outfit',
-      name: 'Outfit & Style',
-      score: 14,
-      maxScore: 20,
-      icon: '👔',
-      color: theme.colors.success,
-    },
-    {
-      id: 'posture',
-      name: 'Posture & Body',
-      score: 15,
-      maxScore: 20,
-      icon: '💪',
-      color: theme.colors.warning,
-    },
-  ];
+export default function ResultsScreen({ navigation, route }) {
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [sections, setSections] = useState<ScoreSection[]>([]);
+
+  useEffect(() => {
+    // Get analysis result from navigation params or use mock data
+    const result = route.params?.analysisResult || null;
+    setAnalysisResult(result);
+
+    if (result) {
+      const scoreSections: ScoreSection[] = [
+        {
+          id: 'face',
+          name: 'Face Harmony',
+          score: result.breakdown.face,
+          maxScore: 25,
+          icon: '😊',
+          color: theme.colors.success,
+          suggestion: result.suggestions.face,
+        },
+        {
+          id: 'hair',
+          name: 'Hair & Beard',
+          score: result.breakdown.hair,
+          maxScore: 25,
+          icon: '💇‍♂️',
+          color: theme.colors.warning,
+          suggestion: result.suggestions.hair,
+        },
+        {
+          id: 'skin',
+          name: 'Skin',
+          score: result.breakdown.skin,
+          maxScore: 20,
+          icon: '✨',
+          color: theme.colors.accent,
+          suggestion: result.suggestions.skin,
+        },
+        {
+          id: 'style',
+          name: 'Outfit & Style',
+          score: result.breakdown.style,
+          maxScore: 20,
+          icon: '👔',
+          color: theme.colors.success,
+          suggestion: result.suggestions.style,
+        },
+        {
+          id: 'body',
+          name: 'Posture & Body',
+          score: result.breakdown.body,
+          maxScore: 20,
+          icon: '💪',
+          color: theme.colors.warning,
+          suggestion: result.suggestions.body,
+        },
+      ];
+      setSections(scoreSections);
+    }
+  }, [route.params]);
 
   const getScoreEmoji = (score: number) => {
     if (score >= 80) return '🔥';
@@ -76,8 +93,50 @@ export default function ResultsScreen({ navigation }) {
   };
 
   const handleViewFeedback = (sectionId: string) => {
-    navigation.navigate('Feedback', { sectionId });
+    const section = sections.find(s => s.id === sectionId);
+    if (section) {
+      navigation.navigate('Feedback', { 
+        sectionId,
+        sectionName: section.name,
+        suggestion: section.suggestion,
+        score: section.score,
+        maxScore: section.maxScore,
+      });
+    }
   };
+
+  const handleSaveResults = async () => {
+    if (!analysisResult) return;
+
+    try {
+      await saveAnalysisResult(analysisResult);
+      Alert.alert(
+        'Results Saved',
+        'Your analysis results have been saved to your history.',
+        [{ text: 'OK' }]
+      );
+    } catch (error) {
+      Alert.alert(
+        'Save Failed',
+        'There was an error saving your results. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
+  const handleNewAnalysis = () => {
+    navigation.navigate('Upload');
+  };
+
+  if (!analysisResult) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading results...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -91,16 +150,16 @@ export default function ResultsScreen({ navigation }) {
         {/* Overall Score Card */}
         <Card style={styles.overallScoreCard}>
           <View style={styles.scoreContainer}>
-            <Text style={styles.scoreEmoji}>{getScoreEmoji(overallScore)}</Text>
-            <Text style={[styles.overallScore, { color: getScoreColor(overallScore) }]}>
-              {overallScore}
+            <Text style={styles.scoreEmoji}>{getScoreEmoji(analysisResult.score)}</Text>
+            <Text style={[styles.overallScore, { color: getScoreColor(analysisResult.score) }]}>
+              {analysisResult.score}
             </Text>
             <Text style={styles.scoreLabel}>out of 100</Text>
           </View>
           <Text style={styles.scoreMessage}>
-            {overallScore >= 80 ? 'Excellent! You\'re looking sharp!' :
-             overallScore >= 70 ? 'Good job! Room for improvement.' :
-             overallScore >= 60 ? 'Not bad! Let\'s level up.' :
+            {analysisResult.score >= 80 ? 'Excellent! You\'re looking sharp!' :
+             analysisResult.score >= 70 ? 'Good job! Room for improvement.' :
+             analysisResult.score >= 60 ? 'Not bad! Let\'s level up.' :
              'Time for a glow up! Check the feedback below.'}
           </Text>
         </Card>
@@ -147,8 +206,16 @@ export default function ResultsScreen({ navigation }) {
                     </Text>
                   </View>
                 </View>
+                
+                {/* Suggestion Preview */}
+                <View style={styles.suggestionPreview}>
+                  <Text style={styles.suggestionText} numberOfLines={2}>
+                    {section.suggestion}
+                  </Text>
+                </View>
+                
                 <Button
-                  title="View Feedback"
+                  title="View Full Feedback"
                   onPress={() => handleViewFeedback(section.id)}
                   variant="outline"
                   size="small"
@@ -163,14 +230,14 @@ export default function ResultsScreen({ navigation }) {
         <View style={styles.actionSection}>
           <Button
             title="Save Results"
-            onPress={() => {}}
+            onPress={handleSaveResults}
             variant="secondary"
             size="large"
             style={styles.actionButton}
           />
           <Button
             title="New Analysis"
-            onPress={() => navigation.navigate('Upload')}
+            onPress={handleNewAnalysis}
             variant="primary"
             size="large"
             style={styles.actionButton}
@@ -188,6 +255,16 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: theme.spacing.lg,
+  },
+  loadingText: {
+    ...theme.typography.h2,
+    color: theme.colors.text,
   },
   header: {
     padding: theme.spacing.lg,
@@ -291,6 +368,15 @@ const styles = StyleSheet.create({
   percentage: {
     ...theme.typography.caption,
     fontWeight: '600',
+  },
+  suggestionPreview: {
+    marginBottom: theme.spacing.md,
+    paddingHorizontal: theme.spacing.sm,
+  },
+  suggestionText: {
+    ...theme.typography.bodySmall,
+    color: theme.colors.textSecondary,
+    fontStyle: 'italic',
   },
   feedbackButton: {
     alignSelf: 'flex-end',

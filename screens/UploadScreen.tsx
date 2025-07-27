@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { theme } from '../theme/theme';
+import { analyzeImages } from '../services/analysisService';
 
 interface PhotoData {
   id: string;
@@ -15,6 +16,7 @@ interface PhotoData {
 
 export default function UploadScreen({ navigation }) {
   const [photos, setPhotos] = useState<PhotoData[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const photoTypes: Omit<PhotoData, 'id' | 'uri'>[] = [
     {
@@ -74,6 +76,54 @@ export default function UploadScreen({ navigation }) {
   };
 
   const canContinue = photos.length >= 2;
+
+  const handleSubmit = async () => {
+    if (!canContinue) return;
+
+    setIsLoading(true);
+    
+    try {
+      const formData = new FormData();
+      
+      photos.forEach((photo, index) => {
+        const photoFile = {
+          uri: photo.uri,
+          type: 'image/jpeg',
+          name: `${photo.type}_${index}.jpg`,
+        } as any;
+        
+        formData.append('images', photoFile);
+        formData.append('imageTypes', photo.type);
+      });
+
+      const result = await analyzeImages(formData);
+      
+      // Navigate to results with the analysis data
+      navigation.navigate('Results', { analysisResult: result });
+      
+    } catch (error) {
+      console.error('Error analyzing images:', error);
+      Alert.alert(
+        'Analysis Failed',
+        'There was an error analyzing your photos. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.colors.accent} />
+          <Text style={styles.loadingText}>Analyzing your photos...</Text>
+          <Text style={styles.loadingSubtext}>This may take a few moments</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -143,8 +193,8 @@ export default function UploadScreen({ navigation }) {
 
       <View style={styles.footer}>
         <Button
-          title="Continue"
-          onPress={() => navigation.navigate('Analysis')}
+          title="Analyze Photos"
+          onPress={handleSubmit}
           disabled={!canContinue}
           size="large"
           style={styles.continueButton}
@@ -161,6 +211,23 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: theme.spacing.lg,
+  },
+  loadingText: {
+    ...theme.typography.h2,
+    color: theme.colors.text,
+    marginTop: theme.spacing.lg,
+    marginBottom: theme.spacing.sm,
+  },
+  loadingSubtext: {
+    ...theme.typography.body,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
   },
   header: {
     padding: theme.spacing.lg,

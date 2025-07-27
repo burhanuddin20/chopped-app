@@ -17,113 +17,79 @@ interface FeedbackData {
 }
 
 export default function FeedbackScreen({ navigation, route }) {
-  const { sectionId } = route.params;
+  const { sectionId, sectionName, suggestion, score, maxScore } = route.params;
 
-  // Mock feedback data - replace with real data later
-  const feedbackData: Record<string, FeedbackData> = {
-    face: {
-      id: 'face',
-      name: 'Face Harmony',
-      score: 18,
-      maxScore: 25,
-      icon: '😊',
-      color: theme.colors.success,
-      feedback: 'Your facial features show good symmetry and proportion. The overall harmony is quite strong, with well-balanced features that work well together. Your jawline definition is particularly good, and your facial structure has a natural appeal.',
-      suggestions: [
-        'Consider a slightly shorter haircut to better frame your face',
-        'Your eyebrows could use some grooming for better definition',
-        'Try experimenting with different facial hair styles',
-        'Consider skincare routine improvements for better complexion'
-      ],
-      tips: [
-        'Good lighting can dramatically improve facial appearance',
-        'Regular grooming habits make a big difference',
-        'Confidence in your natural features is key'
-      ]
-    },
-    hair: {
-      id: 'hair',
-      name: 'Hair & Beard',
-      score: 16,
-      maxScore: 25,
-      icon: '💇‍♂️',
-      color: theme.colors.warning,
-      feedback: 'Your hair has good texture and volume, but the current style could be better suited to your face shape. The beard is well-maintained but could benefit from some styling adjustments to enhance your overall look.',
-      suggestions: [
-        'Try a fade or undercut to add more definition',
-        'Consider a shorter beard style for better jawline definition',
-        'Your hair could benefit from better product usage',
-        'Regular trims will keep your style looking sharp'
-      ],
-      tips: [
-        'Invest in quality hair products',
-        'Find a good barber and stick with them',
-        'Regular maintenance is essential'
-      ]
-    },
-    skin: {
-      id: 'skin',
-      name: 'Skin',
-      score: 15,
-      maxScore: 20,
-      icon: '✨',
-      color: theme.colors.accent,
-      feedback: 'Your skin has a good natural tone, but there are some areas that could benefit from improved care. The overall texture is decent, but with the right routine, you could achieve a more polished appearance.',
-      suggestions: [
-        'Start with a daily cleanser and moisturizer',
-        'Consider adding a vitamin C serum to your routine',
-        'Use sunscreen daily to prevent damage',
-        'Stay hydrated for better skin health'
-      ],
-      tips: [
-        'Consistency is key with skincare',
-        'Less is often more - don\'t overdo products',
-        'Good sleep improves skin quality'
-      ]
-    },
-    outfit: {
-      id: 'outfit',
-      name: 'Outfit & Style',
-      score: 14,
-      maxScore: 20,
-      icon: '👔',
-      color: theme.colors.success,
-      feedback: 'Your style shows good basics, but there\'s room for improvement in coordination and fit. The pieces you choose are generally appropriate, but better styling could elevate your overall appearance significantly.',
-      suggestions: [
-        'Focus on better-fitting clothes that complement your body type',
-        'Learn to layer effectively for more sophisticated looks',
-        'Invest in quality basics that will last',
-        'Pay attention to color coordination'
-      ],
-      tips: [
-        'Fit is more important than brand',
-        'Build a capsule wardrobe with versatile pieces',
-        'Accessories can make a big difference'
-      ]
-    },
-    posture: {
-      id: 'posture',
-      name: 'Posture & Body',
-      score: 15,
-      maxScore: 20,
-      icon: '💪',
-      color: theme.colors.warning,
-      feedback: 'Your posture is generally good, but there are some areas for improvement. Your body language shows confidence, but small adjustments could make you appear more polished and approachable.',
-      suggestions: [
-        'Practice standing with shoulders back and chest open',
-        'Consider strength training to improve overall posture',
-        'Be mindful of how you sit and walk',
-        'Regular stretching can improve flexibility and posture'
-      ],
-      tips: [
-        'Good posture makes you look taller and more confident',
-        'Regular exercise improves overall appearance',
-        'Mindfulness about body language is important'
-      ]
-    }
+  // Get section details based on sectionId
+  const getSectionDetails = (id: string) => {
+    const sections = {
+      face: {
+        icon: '😊',
+        color: theme.colors.success,
+        tips: [
+          'Good lighting can dramatically improve facial appearance',
+          'Regular grooming habits make a big difference',
+          'Confidence in your natural features is key'
+        ]
+      },
+      hair: {
+        icon: '💇‍♂️',
+        color: theme.colors.warning,
+        tips: [
+          'Invest in quality hair products',
+          'Find a good barber and stick with them',
+          'Regular maintenance is essential'
+        ]
+      },
+      skin: {
+        icon: '✨',
+        color: theme.colors.accent,
+        tips: [
+          'Consistency is key with skincare',
+          'Less is often more - don\'t overdo products',
+          'Good sleep improves skin quality'
+        ]
+      },
+      style: {
+        icon: '👔',
+        color: theme.colors.success,
+        tips: [
+          'Fit is more important than brand',
+          'Build a capsule wardrobe with versatile pieces',
+          'Accessories can make a big difference'
+        ]
+      },
+      body: {
+        icon: '💪',
+        color: theme.colors.warning,
+        tips: [
+          'Good posture makes you look taller and more confident',
+          'Regular exercise improves overall appearance',
+          'Mindfulness about body language is important'
+        ]
+      }
+    };
+    return sections[id] || sections.face;
   };
 
-  const currentFeedback = feedbackData[sectionId];
+  const sectionDetails = getSectionDetails(sectionId);
+
+  // Create feedback data from real analysis results
+  const currentFeedback: FeedbackData = {
+    id: sectionId,
+    name: sectionName || 'Analysis',
+    score: score || 0,
+    maxScore: maxScore || 25,
+    icon: sectionDetails.icon,
+    color: sectionDetails.color,
+    feedback: suggestion || 'No specific feedback available for this section.',
+    suggestions: [
+      suggestion || 'Consider working on this aspect of your appearance.',
+      'Regular maintenance and care can improve your score.',
+      'Small changes can make a big difference over time.',
+      'Focus on consistency in your routine.'
+    ],
+    tips: sectionDetails.tips
+  };
 
   if (!currentFeedback) {
     return (
@@ -211,8 +177,8 @@ export default function FeedbackScreen({ navigation, route }) {
         {/* Action Buttons */}
         <View style={styles.actionSection}>
           <Button
-            title="Save Feedback"
-            onPress={() => {}}
+            title="Back to Results"
+            onPress={() => navigation.goBack()}
             variant="secondary"
             size="large"
             style={styles.actionButton}
