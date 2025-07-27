@@ -37,6 +37,12 @@ yarn-error.*
 .env.test
 .env.production
 .env*.local
+backend/.env
+backend/.env.*
+
+# Uploaded files
+backend/uploads/
+uploads/
 
 # typescript
 *.tsbuildinfo
